@@ -87,7 +87,7 @@
           </div>
           <div class="w-full border-t border-gray-200"></div>
           <button
-            @click="deleteTicker(ticker.name)"
+            @click.stop="deleteTicker(ticker.name)"
             class="flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-gray-600 hover:bg-gray-200 hover:opacity-20 transition-all focus:outline-none"
           >
             <svg
@@ -190,6 +190,7 @@ export default {
       this.tickers = this.tickers.filter(
         (ticker) => ticker.name !== tickerName
       );
+      this.selectTicker(null);
     },
 
     selectTicker(tickerName) {
