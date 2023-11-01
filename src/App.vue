@@ -71,10 +71,10 @@
         <div
           v-for="ticker in tickers"
           :key="ticker.name"
-          @click="selectedTicker = ticker.name"
+          @click="selectTicker(ticker)"
           class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
           :class="{
-            'border-4': ticker.name === selectedTicker,
+            'border-4': ticker === selectedTicker,
           }"
         >
           <div class="px-4 py-5 sm:p-6 text-center">
@@ -110,13 +110,15 @@
       <hr class="w-full border-t border-gray-600 my-4" />
       <section v-if="selectedTicker" class="relative">
         <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
-          {{ selectedTicker }} - USD
+          {{ selectedTicker.name }} - USD
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
-          <div class="bg-purple-800 border w-10 h-24"></div>
-          <div class="bg-purple-800 border w-10 h-32"></div>
-          <div class="bg-purple-800 border w-10 h-48"></div>
-          <div class="bg-purple-800 border w-10 h-16"></div>
+          <div
+            v-for="(bar, index) in normalizeGraph()"
+            :key="index"
+            class="bg-purple-800 border w-10"
+            :style="{ height: `${bar}%` }"
+          ></div>
         </div>
         <button
           @click="selectTicker(null)"
@@ -183,7 +185,9 @@ export default {
 
         this.tickers.find((ticker) => ticker.name === tickerName).price =
           data.USD;
-      }, 1000);
+
+        if (this.selectedTicker?.name === tickerName) this.graph.push(data.USD);
+      }, 3000);
     },
 
     deleteTicker(tickerName) {
@@ -193,8 +197,18 @@ export default {
       this.selectTicker(null);
     },
 
-    selectTicker(tickerName) {
-      this.selectedTicker = tickerName;
+    selectTicker(ticker) {
+      this.selectedTicker = ticker;
+      this.graph = [];
+    },
+
+    normalizeGraph() {
+      const min = Math.min(...this.graph);
+      const max = Math.max(...this.graph);
+      return this.graph.map((cur) => {
+        if (min === max) return 50;
+        return 5 + ((cur - min) * 95) / (max - min);
+      });
     },
   },
 };
