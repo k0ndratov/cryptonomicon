@@ -1,6 +1,32 @@
 <template>
   <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4">
     <div class="container">
+      <div
+        ref="spinner"
+        class="fixed w-100 h-100 opacity-80 bg-purple-800 inset-0 z-50 flex items-center justify-center"
+      >
+        <svg
+          class="animate-spin -ml-1 mr-3 h-12 w-12 text-white"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          ></circle>
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+      </div>
+
       <section>
         <div class="flex">
           <div class="max-w-xs">
@@ -21,27 +47,15 @@
               class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap"
             >
               <span
+                v-for="ticker in tickersAutoComplite"
+                @click="addTicker(ticker)"
+                :key="ticker"
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
               >
-                BTC
-              </span>
-              <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                DOGE
-              </span>
-              <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                BCH
-              </span>
-              <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                CHD
+                {{ ticker }}
               </span>
             </div>
-            <div class="text-sm text-red-600">Такой тикер уже добавлен</div>
+            <div v-if="error" class="text-sm text-red-600">{{ error }}</div>
           </div>
         </div>
         <button
@@ -153,20 +167,53 @@
 </template>
 
 <script>
+import { nextTick } from "vue";
+
 export default {
   name: "App",
 
+  API_KEY: "c383b6b678e0b4191274daedd7746977dc963bebe930e71c1e14bd53bb5ffce2",
+
   data() {
     return {
+      tickersAutoComplite: ["BTC", "DOGE", "BCH", "CHD"],
       ticker: "",
       selectedTicker: null,
       tickers: [],
       graph: [],
+      error: "",
     };
   },
 
+  notReactiveData: {
+    coins: null,
+  },
+
+  mounted() {
+    this.getTickerList();
+  },
+
   methods: {
-    addTicker(tickerName) {
+    async addTicker(tickerName) {
+      this.ticker = tickerName;
+      await nextTick();
+
+      if (this.tickers.some((ticker) => ticker.name === tickerName)) {
+        this.error = "Такой тикер уже добавлен";
+        return;
+      }
+
+      if (
+        !Object.keys(this.$options.notReactiveData.coins).some(
+          (ticker) => ticker === tickerName
+        )
+      ) {
+        this.error = "Такого тикера не существует";
+        return;
+      }
+
+      this.error = "";
+
       this.tickers.push({
         name: tickerName,
         price: "-",
@@ -175,11 +222,8 @@ export default {
       this.ticker = "";
 
       setInterval(async () => {
-        const API_KEY =
-          "c383b6b678e0b4191274daedd7746977dc963bebe930e71c1e14bd53bb5ffce2";
-
         const response = await fetch(
-          `https://min-api.cryptocompare.com/data/price?fsym=${tickerName}&tsyms=USD&api_key=${API_KEY}`
+          `https://min-api.cryptocompare.com/data/price?fsym=${tickerName}&tsyms=USD&api_key=${this.$options.API_KEY}`
         );
         const data = await response.json();
 
@@ -188,6 +232,7 @@ export default {
 
         if (this.selectedTicker?.name === tickerName) this.graph.push(data.USD);
       }, 3000);
+      console.log("added");
     },
 
     deleteTicker(tickerName) {
@@ -209,6 +254,34 @@ export default {
         if (min === max) return 50;
         return 5 + ((cur - min) * 95) / (max - min);
       });
+    },
+
+    async getTickerList() {
+      const response = await fetch(
+        `https://min-api.cryptocompare.com/data/all/coinlist?summary=true&api_key=${this.$options.API_KEY}`
+      );
+      const coins = await response.json();
+      this.$options.notReactiveData.coins = coins.Data;
+      this.$refs.spinner.remove();
+    },
+  },
+
+  watch: {
+    ticker(tickerName) {
+      console.log("clear");
+      this.error = "";
+
+      if (!tickerName) {
+        this.tickersAutoComplite = ["BTC", "DOGE", "BCH", "CHD"];
+      } else {
+        this.tickersAutoComplite = Object.keys(
+          this.$options.notReactiveData.coins
+        )
+          .filter((coin) => {
+            return coin.includes(tickerName);
+          })
+          .slice(0, 4);
+      }
     },
   },
 };
