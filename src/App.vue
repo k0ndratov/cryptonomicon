@@ -108,7 +108,7 @@
         </div>
       </dl>
       <hr class="w-full border-t border-gray-600 my-4" />
-      <section class="relative">
+      <section v-if="selectedTicker" class="relative">
         <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
           VUE - USD
         </h3>
@@ -118,7 +118,11 @@
           <div class="bg-purple-800 border w-10 h-48"></div>
           <div class="bg-purple-800 border w-10 h-16"></div>
         </div>
-        <button type="button" class="absolute top-0 right-0">
+        <button
+          @click="selectTicker(null)"
+          type="button"
+          class="absolute top-0 right-0"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -168,6 +172,7 @@ export default {
           price: "-",
         },
       ],
+      graph: [],
     };
   },
 
@@ -185,6 +190,10 @@ export default {
       this.tickers = this.tickers.filter(
         (ticker) => ticker.name !== tickerName
       );
+    },
+
+    selectTicker(tickerName) {
+      this.selectedTicker = tickerName;
     },
   },
 };
