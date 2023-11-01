@@ -110,7 +110,7 @@
       <hr class="w-full border-t border-gray-600 my-4" />
       <section v-if="selectedTicker" class="relative">
         <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
-          VUE - USD
+          {{ selectedTicker }} - USD
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
           <div class="bg-purple-800 border w-10 h-24"></div>
@@ -158,20 +158,7 @@ export default {
     return {
       ticker: "",
       selectedTicker: null,
-      tickers: [
-        {
-          name: "BTC",
-          price: "-",
-        },
-        {
-          name: "DOGE",
-          price: "20",
-        },
-        {
-          name: "LOL",
-          price: "-",
-        },
-      ],
+      tickers: [],
       graph: [],
     };
   },
@@ -184,6 +171,19 @@ export default {
       });
 
       this.ticker = "";
+
+      setInterval(async () => {
+        const API_KEY =
+          "c383b6b678e0b4191274daedd7746977dc963bebe930e71c1e14bd53bb5ffce2";
+
+        const response = await fetch(
+          `https://min-api.cryptocompare.com/data/price?fsym=${tickerName}&tsyms=USD&api_key=${API_KEY}`
+        );
+        const data = await response.json();
+
+        this.tickers.find((ticker) => ticker.name === tickerName).price =
+          data.USD;
+      }, 1000);
     },
 
     deleteTicker(tickerName) {
